@@ -1,0 +1,15 @@
+# Node.js dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Cache
+.cache/
+.next/
+
+# Environment variables
+.env
+
+
