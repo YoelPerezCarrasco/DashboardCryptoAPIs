@@ -18,6 +18,12 @@ import {
   AppBar,
   Toolbar,
   TableContainer,
+  FormControl,
+  TextField,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
 } from '@mui/material';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -71,6 +77,11 @@ const App: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [darkMode, setDarkMode] = useState(false);
 
+  // State for alerts
+  const [phone, setPhone] = useState('');
+  const [crypto, setCrypto] = useState('bitcoin');
+  const [targetPrice, setTargetPrice] = useState<number>(0);
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
@@ -90,6 +101,24 @@ const App: React.FC = () => {
       fontFamily: 'Roboto, Arial',
     },
   });
+
+  const handleSetAlert = async () => {
+    try {
+      const response = await axios.post('http://localhost:8000/api/set-alert', null, {
+        params: {
+          phone,
+          crypto,
+          target_price: targetPrice,
+        },
+      });
+      alert(response.data.message);
+      setPhone('');
+      setTargetPrice(0);
+    } catch (error) {
+      console.error('Error setting alert:', error);
+      alert('Failed to set alert. Please try again.');
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -141,8 +170,9 @@ const App: React.FC = () => {
         <Tabs value={tabValue} onChange={handleTabChange} centered>
           <Tab label="Prices" />
           <Tab label="News" />
+          <Tab label="Set Alert" />
         </Tabs>
-
+        
         {tabValue === 0 && (
           <Grid container spacing={2} sx={{ marginTop: 2 }}>
            {/* Columna izquierda: Prices */}
@@ -285,6 +315,54 @@ const App: React.FC = () => {
                 </Box>
               ))}
             </Slider>
+          </Paper>
+        )}
+         {tabValue === 2 && (
+          <Paper elevation={4} sx={{ p: 3, m: 2, borderRadius: 2 }}>
+            <Typography variant="h4" gutterBottom>
+              Set Price Alert
+            </Typography>
+            <Box component="form" onSubmit={(e) => e.preventDefault()} sx={{ mt: 2 }}>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <TextField
+                  label="Phone Number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </FormControl>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Cryptocurrency</InputLabel>
+                <Select
+                  value={crypto}
+                  onChange={(e) => setCrypto(e.target.value)}
+                  required
+                >
+                  {prices.map((coin) => (
+                    <MenuItem key={coin.id} value={coin.id}>
+                      {coin.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <TextField
+                  label="Target Price (USD)"
+                  type="number"
+                  value={targetPrice}
+                  onChange={(e) => setTargetPrice(Number(e.target.value))}
+                  required
+                />
+              </FormControl>
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                onClick={handleSetAlert}
+              >
+                Set Alert
+              </Button>
+            </Box>
           </Paper>
         )}
       </Box>

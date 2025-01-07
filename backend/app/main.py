@@ -1,19 +1,29 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import os
 from dotenv import load_dotenv
 from cachetools import TTLCache
 import time
+from twilio.rest import Client
+
 
 load_dotenv()
 
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 API_KEY = "CG-pr8XL6o36UZCTfrGFUhh79Un"
-
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
+COINGECKO_API = "https://api.coingecko.com/api/v3/simple/price"
 
 app = FastAPI()
 cache = TTLCache(maxsize=100, ttl=60)
+
+twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+# Lista para almacenar las alertas configuradas
+alerts = []
 
 
 # Configuración de CORS para permitir el acceso desde el frontend
@@ -123,3 +133,85 @@ def convert_crypto(
         "conversion_rate": conversion_rate,
         "converted_amount": converted_amount,
     }
+
+
+@app.get("/api/alerts")
+def list_alerts():
+    """
+    Lista todas las alertas configuradas.
+    """
+    return alerts
+
+@app.delete("/api/alerts")
+def delete_alert(phone: str, crypto: str):
+    """
+    Elimina una alerta específica.
+    """
+    global alerts
+    alerts = [alert for alert in alerts if not (alert["phone"] == phone and alert["crypto"] == crypto)]
+    return {"message": f"Alert for {crypto.capitalize()} has been deleted for {phone}"}
+
+
+def send_sms(to: str, body: str):
+    """
+    Envía un SMS usando Twilio API.
+    """
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json"
+    auth = (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+    data = {
+        "To": to,
+        "From": TWILIO_PHONE_NUMBER,
+        "Body": body,
+    }
+    response = requests.post(url, auth=auth, data=data)
+    if response.status_code != 201:
+        print(f"Failed to send SMS: {response.status_code} - {response.text}")
+    else:
+        print(f"SMS sent successfully to {to}")
+
+@app.post("/api/set-alert")
+def set_price_alert(
+    phone: str = Query(..., description="Phone number to send SMS."),
+    crypto: str = Query(..., description="Cryptocurrency to monitor."),
+    target_price: float = Query(..., description="Price threshold for alert."),
+    background_tasks: BackgroundTasks = None
+):
+    """
+    Configura una alerta de precio para una criptomoneda específica.
+    """
+    alert = {"phone": phone, "crypto": crypto.lower(), "target_price": target_price}
+    alerts.append(alert)
+
+    # Enviar mensaje SMS de confirmación
+    confirmation_message = (
+        f"Tu alerta para {crypto.capitalize()} se ha configurado con éxito. "
+        f"Te notificaremos cuando alcance el precio objetivo de ${target_price}."
+    )
+    send_sms(phone, confirmation_message)
+
+    # Monitoreo del precio en segundo plano
+    background_tasks.add_task(monitor_price, phone, crypto.lower(), target_price)
+
+    return {"message": f"Alert set for {crypto.capitalize()} at ${target_price}"}
+
+def monitor_price(phone: str, crypto: str, target_price: float):
+    """
+    Monitorea el precio de una criptomoneda y envía un SMS cuando se cumple la condición.
+    """
+    while True:
+        try:
+            response = requests.get(COINGECKO_API, params={"ids": crypto, "vs_currencies": "usd"})
+            response.raise_for_status()
+            data = response.json()
+            current_price = data.get(crypto, {}).get("usd", 0)
+
+            if current_price >= target_price:
+                alert_message = (
+                    f"¡Alerta activada! {crypto.capitalize()} ha alcanzado el precio objetivo de ${target_price}. 🚀"
+                )
+                send_sms(phone, alert_message)
+                break
+
+        except Exception as e:
+            print(f"Error monitoring price for {crypto}: {e}")
+            break
