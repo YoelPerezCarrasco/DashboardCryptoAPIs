@@ -1,100 +1,81 @@
+# Proyecto: Dashboard Crypto APIs
 
-# Proyecto DashboardCryptoAPIs
+## Descripción
+Este proyecto es un dashboard para consultar precios de criptomonedas, realizar conversiones y leer noticias relacionadas con el mundo de las criptomonedas.
+Está construido utilizando Docker para facilitar el despliegue y configuración.
 
-Este repositorio contiene un proyecto completo para un dashboard que utiliza APIs de criptomonedas. El proyecto se ejecuta mediante Docker, lo que simplifica su despliegue y configuración.
+## Requisitos Previos
+1. **Clonar el repositorio**:
+   ```bash
+   git clone https://github.com/YoelPerezCarrasco/DashboardCryptoAPIs.git
+   ```
 
----
+2. **Tener Docker instalado**:
+   - Descarga e instala Docker Desktop desde [Docker](https://www.docker.com/).
+   - Asegúrate de que Docker esté corriendo correctamente ejecutando:
+     ```bash
+     docker --version
+     ```
 
-## **Requisitos Previos**
+3. **Acceder al directorio del proyecto**:
+   ```bash
+   cd DashboardCryptoAPIs
+   ```
 
-Antes de iniciar, asegúrate de tener los siguientes requisitos instalados en tu máquina:
+## Despliegue del Proyecto
 
-1. **Git**: Para clonar el repositorio.
-2. **Docker**: Para ejecutar los contenedores.
-3. **Docker Compose**: Generalmente incluido con Docker Desktop.
+1. **Ejecutar Docker Compose**:
+   En la raíz del proyecto, ejecuta:
+   ```bash
+   docker-compose up
+   ```
 
-Puedes verificar que Docker y Docker Compose estén instalados ejecutando:
+   Este comando lanzará todos los contenedores necesarios para ejecutar la aplicación (frontend, backend, base de datos, etc.).
 
-```bash
-docker --version
-docker-compose --version
-```
+2. **Abrir el Frontend**:
+   Una vez que los contenedores estén funcionando, abre tu navegador y accede a:
+   ```
+   http://localhost:3000
+   ```
+   Aquí se encuentra el frontend del proyecto.
 
----
+## APIs Utilizadas
 
-## **Pasos para Desplegar el Proyecto**
+El proyecto utiliza las siguientes APIs para obtener datos:
 
-### 1. Clonar el Repositorio
+1. **CoinGecko API**:
+   - **Descripción**: Proporciona información sobre precios de criptomonedas, cambios de precios en 24 horas y mucho más.
+   - **Endpoints utilizados**:
+     - `GET /simple/price`: Para obtener precios actuales de criptomonedas.
+     - `GET /simple/supported_vs_currencies`: Para listar monedas de cambio soportadas.
 
-Abre tu terminal y clona este repositorio ejecutando:
+2. **NewsAPI**:
+   - **Descripción**: Obtiene noticias relacionadas con criptomonedas y blockchain.
+   - **Endpoints utilizados**:
+     - `GET /v2/everything`: Para buscar noticias específicas sobre criptomonedas.
 
-```bash
-git clone https://github.com/YoelPerezCarrasco/DashboardCryptoAPIs.git
-```
+## Estructura del Proyecto
 
-Luego, entra en la carpeta del proyecto:
+- **frontend/**: Contiene el código del dashboard desarrollado en React.
+- **backend/**: Implementa las lógicas de negocio y sirve las APIs necesarias.
+- **docker-compose.yml**: Configura los servicios necesarios (frontend, backend, base de datos, etc.).
 
-```bash
-cd DashboardCryptoAPIs
-```
+## Comandos Útiles
 
----
+- **Detener los contenedores**:
+  ```bash
+  docker-compose down
+  ```
 
-### 2. Iniciar el Proyecto con Docker Compose
+- **Reconstruir los contenedores** (si has realizado cambios en el código):
+  ```bash
+  docker-compose up --build
+  ```
 
-Ejecuta el siguiente comando desde la raíz del proyecto (donde se encuentra el archivo `docker-compose.yml`):
-
-```bash
-docker-compose up
-```
-
-Esto:
-- Construirá las imágenes de Docker necesarias.
-- Iniciará los contenedores para el backend, frontend y cualquier otra dependencia configurada.
-
----
-
-### 3. Acceder a la Aplicación
-
-Una vez que Docker Compose haya lanzado todos los servicios, puedes acceder al **frontend** del proyecto en tu navegador web:
-
-```text
-http://localhost:3000
-```
-
-El puerto 3000 es el predeterminado para el frontend en este proyecto. Asegúrate de que no haya otros servicios utilizando ese puerto.
-
----
-
-## **Apagar el Proyecto**
-
-Para detener y eliminar los contenedores, presiona `Ctrl + C` en el terminal donde se ejecutó `docker-compose up`, o bien ejecuta:
-
-```bash
-docker-compose down
-```
-
-Esto detendrá y eliminará los contenedores asociados al proyecto.
-
----
-
-## **Notas Adicionales**
-
-- Si necesitas reconstruir las imágenes de Docker (por ejemplo, después de realizar cambios en el código), utiliza:
-
-```bash
-docker-compose up --build
-```
-
-- Si encuentras problemas, verifica los logs ejecutando:
-
-```bash
-docker-compose logs
-```
-
-- Asegúrate de que los puertos necesarios (por ejemplo, 3000 para el frontend) estén disponibles en tu máquina.
-
----
-
-¡Disfruta explorando y utilizando el DashboardCryptoAPIs! 🚀
+## Notas
+- Asegúrate de que los puertos 3000 (frontend) y otros definidos en el archivo `docker-compose.yml` estén disponibles en tu sistema.
+- Si tienes algún problema con el despliegue, verifica los logs de Docker para identificar el problema:
+  ```bash
+  docker-compose logs
+  ```
 
